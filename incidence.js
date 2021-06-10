@@ -988,6 +988,7 @@ class Format {
 
 class RkiRequest {
   async locationData(location) {
+    Helper.log("getLocationData")
     const outputFields = 'GEN,RS,EWZ,EWZ_BL,BL_ID,cases,cases_per_100k,cases7_per_100k,cases7_bl_per_100k,last_update,BL,IBZ';
     // https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where=1=1&outFields=${outputFields}&geometry=${location.longitude.toFixed(3)},${location.latitude.toFixed(3)}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelWithin&returnGeometry=false&outSR=4326&f=json
     // https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where%3D1%3D1%26outFields%3D%24%7BoutputFields%7D%26geometry%3D13.680170%2C51.159111&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelWithin&returnGeometry=false&outSR=4326&f=json
@@ -997,6 +998,7 @@ class RkiRequest {
     return (response.status === ENV.status.ok) ? response.data.features[0].attributes : false
   }
   async areaCases(areaID) {
+    Helper.log("getAreaCases")
     const apiStartDate = Helper.getDateBefore(CFG.graphShowDays + 7)
     // https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?f=json&where=NeuerFall IN(1,-1) AND IdLandkreis=${areaID}&objectIds&time&resultType=standard&outFields&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields&groupByFieldsForStatistics&outStatistics=[{"statisticType":"sum","onStatisticField":"AnzahlFall","outStatisticFieldName":"cases"}, {"statisticType":"max","onStatisticField":"MeldeDatum","outStatisticFieldName":"date"}, {"statisticType":"max","onStatisticField":"RefDatum","outStatisticFieldName":"date"}]&having&resultOffset&resultRecordCount&sqlFormat=none&token
     // https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?where=AnzahlFall>0 AND Landkreis='LK Meißen'&outFields=*&outSR=4326&f=json&groupByFieldsForStatistics=Meldedatum,NeuerFall,RefDatum&outStatistics=[{"statisticType": "sum", "onStatisticField": "AnzahlFall", "outStatisticFieldName": "GesamtFaelleTag"}]&orderBy=Meldedatum
@@ -1012,6 +1014,7 @@ class RkiRequest {
     return await this.getCases(newCasesTodayUrl, newCasesHistoryUrl)
   }
   async stateCases(blID) {
+    Helper.log("getStateCases")
     const apiStartDate = Helper.getDateBefore(CFG.graphShowDays + 7)
     // https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?f=json&where=NeuerFall IN(1, -1) AND IdBundesland=${blID}&objectIds&time&resultType=standard&outFields&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields&groupByFieldsForStatistics&outStatistics=[{"statisticType":"sum","onStatisticField":"AnzahlFall","outStatisticFieldName":"cases"}, {"statisticType":"max","onStatisticField":"MeldeDatum","outStatisticFieldName":"date"}]&having&resultOffset&resultRecordCount&sqlFormat=none&token
     const newCasesTodayUrl = `https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?f=json&where=NeuerFall%20IN(1,%20-1)%20AND%20IdBundesland%3D${blID}&objectIds&time&resultType=standard&outFields&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnDistinctValues=false&cacheHint=false&orderByFields&groupByFieldsForStatistics&outStatistics=%5B%7B%22statisticType%22:%22sum%22,%22onStatisticField%22:%22AnzahlFall%22,%22outStatisticFieldName%22:%22cases%22%7D,%20%7B%22statisticType%22:%22max%22,%22onStatisticField%22:%22MeldeDatum%22,%22outStatisticFieldName%22:%22date%22%7D%5D&having&resultOffset&resultRecordCount&sqlFormat=none&token`
@@ -1021,6 +1024,7 @@ class RkiRequest {
     return await this.getCases(newCasesTodayUrl, newCasesHistoryUrl)
   }
   async dCases() {
+    Helper.log("getCountryCases")
     const apiStartDate = Helper.getDateBefore(CFG.graphShowDays + 7)
     // https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?f=json&where=NeuerFall IN(1, -1)&returnGeometry=false&geometry=42.000,12.000&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelWithin&outFields=*&outStatistics=[{"statisticType":"sum","onStatisticField":"AnzahlFall","outStatisticFieldName":"cases"}, {"statisticType":"max","onStatisticField":"MeldeDatum","outStatisticFieldName":"date"}]&resultType=standard&cacheHint=true
     const newCasesTodayUrl = `https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?f=json&where=NeuerFall%20IN(1,%20-1)&returnGeometry=false&geometry=42.000,12.000&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelWithin&outFields=*&outStatistics=%5B%7B%22statisticType%22:%22sum%22,%22onStatisticField%22:%22AnzahlFall%22,%22outStatisticFieldName%22:%22cases%22%7D,%20%7B%22statisticType%22:%22max%22,%22onStatisticField%22:%22MeldeDatum%22,%22outStatisticFieldName%22:%22date%22%7D%5D&resultType=standard&cacheHint=true`
