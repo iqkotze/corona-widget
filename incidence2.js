@@ -5,10 +5,11 @@
 class IncidenceWidget {
 
   constructor() {
-    this.previousDaysToShow = 31;
-    this.apiUrlDistricts = (location) => `https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where=1%3D1&outFields=RS,GEN,cases7_bl_per_100k,cases7_per_100k,BL&geometry=${location.longitude.toFixed(3)}%2C${location.latitude.toFixed(3)}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelWithin&returnGeometry=false&outSR=4326&f=json`
-    // where=IdLandkreis = '${districtId}' AND Meldedatum >= TIMESTAMP '${this.getDateString(-this.previousDaysToShow)} 00:00:00' AND Meldedatum <= TIMESTAMP '${this.getDateString(1)} 00:00:00 AND Refdatum >= TIMESTAMP '${this.getDateString(-this.previousDaysToShow)} 00:00:00' AND Refdatum <= TIMESTAMP '${this.getDateString(1)} 00:00:00'
-    this.apiUrlDistrictsHistory = (districtId) => `https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?where=IdLandkreis%20%3D%20%27${districtId}%27%20AND%20Meldedatum%20%3E%3D%20TIMESTAMP%20%27${this.getDateString(-this.previousDaysToShow)}%2000%3A00%3A00%27%20AND%20Meldedatum%20%3C%3D%20TIMESTAMP%20%27${this.getDateString(1)}%2000%3A00%3A00%27%20AND%20Refdatum%20%3E%3D%20TIMESTAMP%20%27${this.getDateString(-this.previousDaysToShow)}%2000%3A00%3A00%27%20AND%20Refdatum%20%3C%3D%20TIMESTAMP%20%27${this.getDateString(1)}%2000%3A00%3A00%27&outFields=Landkreis,Meldedatum,AnzahlFall,RefDatum&outSR=4326&f=json`
+    this.previousDaysToShow = 7;
+    this.sevenDay = 7;
+    this.apiUrlDistricts = (location) => `https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_Landkreisdaten/FeatureServer/0/query?where=1%3D1&outFields=EWZ,RS,GEN,cases7_bl_per_100k,cases7_per_100k,BL&geometry=${location.longitude.toFixed(3)}%2C${location.latitude.toFixed(3)}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelWithin&returnGeometry=false&outSR=4326&f=json`
+    // where=IdLandkreis = '${districtId}' AND Meldedatum >= TIMESTAMP '${this.getDateString(-this.previousDaysToShow)} 00:00:00' AND Meldedatum <= TIMESTAMP '${this.getDateString(1)} 00:00:00 AND Refdatum >= TIMESTAMP '${this.getDateString(-this.previousDaysToShow)} 00:00:00' AND Refdatum <= TIMESTAMP '${this.getDateString(1)} 00:00:00' AND IstErkrankungsbeginn = 1
+    this.apiUrlDistrictsHistory = (districtId) => `https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/RKI_COVID19/FeatureServer/0/query?where=IdLandkreis%20%3D%20%27${districtId}%27%20AND%20Meldedatum%20%3E%3D%20TIMESTAMP%20%27${this.getDateString(-this.previousDaysToShow)}%2000%3A00%3A00%27%20AND%20Meldedatum%20%3C%3D%20TIMESTAMP%20%27${this.getDateString(1)}%2000%3A00%3A00%27%20AND%20Refdatum%20%3E%3D%20TIMESTAMP%20%27${this.getDateString(-this.previousDaysToShow)}%2000%3A00%3A00%27%20AND%20Refdatum%20%3C%3D%20TIMESTAMP%20%27${this.getDateString(1)}%2000%3A00%3A00%27%20AND%20IstErkrankungsbeginn%20%3D%201&outFields=Landkreis,Meldedatum,AnzahlFall,RefDatum,IstErkrankungsbeginn&outSR=4326&f=json`
     this.stateToAbbr = {
       'Baden-Württemberg': 'BW',
       'Bayern': 'BY',
@@ -30,12 +31,12 @@ class IncidenceWidget {
   }
 
   async run() {
-      let widget = await this.createWidget()
-      if (!config.runsInWidget) {
-        await widget.presentSmall()
-      }
-      Script.setWidget(widget)
-      Script.complete()
+    let widget = await this.createWidget()
+    if (!config.runsInWidget) {
+      await widget.presentSmall()
+    }
+    Script.setWidget(widget)
+    Script.complete()
   }
 
   async createWidget(items) {
@@ -54,7 +55,7 @@ class IncidenceWidget {
     header.font = Font.mediumSystemFont(13)
     textStack.addSpacer()
 
-    if(data.error) {
+    if (data.error) {
       // Error handling
       let loadingIndicator = textStack.addText(data.error.toUpperCase())
       textStack.setPadding(14, 14, 14, 14)
@@ -64,7 +65,7 @@ class IncidenceWidget {
       spacer.addSpacer();
     } else {
       // Enable caching
-      list.refreshAfterDate = new Date(Date.now() + 60*60*1000)
+      list.refreshAfterDate = new Date(Date.now() + 60 * 60 * 1000)
 
       // Main stack for value and area name
       let incidenceStack = textStack.addStack()
@@ -102,16 +103,20 @@ class IncidenceWidget {
   }
 
   async getData() {
-     try {
+    try {
       let location = await this.getLocation()
-      if(location) {
-        let currentData = await new Request(this.apiUrlDistricts(location)).loadJSON()
-        let attr = currentData.features[0].attributes
-        let historicalData = await new Request(this.apiUrlDistrictsHistory(attr.RS)).loadJSON()
+      if (location) {
+        let currentData = await new Request(this.apiUrlDistricts(location)).loadJSON();
+        Helper.log("CurrentData:", currentData);
+        let attr = currentData.features[0].attributes;
+        //Helper.log("Attributes:", attr);
+        let historicalData = await new Request(this.apiUrlDistrictsHistory(attr.RS)).loadJSON();
+        //Helper.log("HistoricalData:", historicalData);
         let aggregate = historicalData.features.map(f => f.attributes).reduce((dict, feature) => {
-          dict[feature["Meldedatum"]] = (dict[feature["Meldedatum"]]|0) + feature["AnzahlFall"];
+          dict[feature["Refdatum"]] = (dict[feature["Refdatum"]] | dict[feature["Meldedatum"]] | 0) + feature["AnzahlFall"] + feature["IstErkrankungsbeginn"];
           return dict;
         }, {});
+        //Helper.log("Aggregate:", aggregate);
         let timeline = Object.keys(aggregate).sort().map(k => aggregate[k]);
         let casesYesterday7 = timeline.slice(-8, -1).reduce(this.sum);
         let casesToday7 = timeline.slice(-7).reduce(this.sum);
@@ -120,16 +125,18 @@ class IncidenceWidget {
           incidence: attr.cases7_per_100k.toFixed(0),
           areaName: attr.GEN,
           trend: trend,
-          incidenceBySide:
-          attr.cases7_bl_per_100k.toFixed(0),
-          areaNameBySide:
-          this.stateToAbbr[attr.BL],
+          incidenceBySide: attr.cases7_bl_per_100k.toFixed(0),
+          areaNameBySide: this.stateToAbbr[attr.BL],
           timeline: timeline
         };
       }
-      return { error: "Standort nicht verfügbar." }
-    } catch(e) {
-      return { error: "Fehler bei Datenabruf." };
+      return {
+        error: "Standort nicht verfügbar."
+      }
+    } catch (e) {
+      return {
+        error: "Fehler bei Datenabruf."
+      };
     }
   }
 
@@ -140,14 +147,17 @@ class IncidenceWidget {
 
   async getLocation() {
     try {
-      if(args.widgetParameter) {
+      if (args.widgetParameter) {
         let fixedCoordinates = args.widgetParameter.split(",").map(parseFloat)
-        return { latitude: fixedCoordinates[0], longitude: fixedCoordinates[1] }
+        return {
+          latitude: fixedCoordinates[0],
+          longitude: fixedCoordinates[1]
+        }
       } else {
         Location.setAccuracyToThreeKilometers()
         return await Location.current()
       }
-    } catch(e) {
+    } catch (e) {
       return null;
     }
   }
@@ -173,9 +183,9 @@ class LineChart {
     let count = this.values.length;
     let step = this.ctx.size.width / (count - 1);
     let points = this.values.map((current, index, all) => {
-        let x = step*index
-        let y = this.ctx.size.height - (current - minValue) / difference * this.ctx.size.height;
-        return new Point(x, y)
+      let x = step * index
+      let y = this.ctx.size.height - (current - minValue) / difference * this.ctx.size.height;
+      return new Point(x, y)
     });
     return this._getSmoothPath(points);
   }
@@ -184,13 +194,13 @@ class LineChart {
     let path = new Path()
     path.move(new Point(0, this.ctx.size.height));
     path.addLine(points[0]);
-    for(var i = 0; i < points.length-1; i ++) {
-      let xAvg = (points[i].x + points[i+1].x) / 2;
-      let yAvg = (points[i].y + points[i+1].y) / 2;
+    for (var i = 0; i < points.length - 1; i++) {
+      let xAvg = (points[i].x + points[i + 1].x) / 2;
+      let yAvg = (points[i].y + points[i + 1].y) / 2;
       let avg = new Point(xAvg, yAvg);
       let cp1 = new Point((xAvg + points[i].x) / 2, points[i].y);
-      let next = new Point(points[i+1].x, points[i+1].y);
-      let cp2 = new Point((xAvg + points[i+1].x) / 2, points[i+1].y);
+      let next = new Point(points[i + 1].x, points[i + 1].y);
+      let cp2 = new Point((xAvg + points[i + 1].x) / 2, points[i + 1].y);
       path.addQuadCurve(avg, cp1);
       path.addQuadCurve(next, cp2);
     }
@@ -201,7 +211,7 @@ class LineChart {
 
   configure(fn) {
     let path = this._calculatePath()
-    if(fn) {
+    if (fn) {
       fn(this.ctx, path);
     } else {
       this.ctx.addPath(path);
@@ -210,6 +220,12 @@ class LineChart {
     return this.ctx;
   }
 
+}
+
+class Helper {
+  static log(...data) {
+    console.log(data.map(JSON.stringify).join(' | '))
+  }
 }
 
 await new IncidenceWidget().run();
